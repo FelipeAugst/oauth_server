@@ -1,14 +1,12 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
-	"github.com/go-oauth2/mysql"
+	_ "github.com/go-oauth2/mysql"
 	"github.com/go-oauth2/oauth2/manage"
 	"github.com/go-oauth2/oauth2/models"
 	"github.com/go-oauth2/oauth2/server"
@@ -20,13 +18,14 @@ import (
 
 func main() {
 
-	db, err := sql.Open("mysql", "felipe:felipe@/goauth2")
-	if err != nil {
-		log.Fatal(err)
-	}
-	storage := mysql.NewStoreWithDB(db, "tokens", 0)
+	//db, err := sql.Open("mysql", "felipe:felipe@/goauth2")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//storage := mysql.NewStoreWithDB(db, "tokens", 0)
+
 	m := manage.NewDefaultManager()
-	m.MustTokenStorage(storage, nil)
+	m.MustTokenStorage(store.NewMemoryTokenStore())
 
 	clientStorage := store.NewClientStore()
 	var client = models.Client{ID: "Client", Secret: "secret", UserID: "user3", Domain: "http://localhost"}
@@ -38,7 +37,7 @@ func main() {
 
 	srv.SetClientInfoHandler(server.ClientFormHandler)
 
-	srv.SetInternalErrorHandler(server.InternalErrorHandler(func(er error) (re *errors.Response) {
+	srv.SetInternalErrorHandler(server.InternalErrorHandler(func(err error) (re *errors.Response) {
 		return errors.NewResponse(err, 500)
 	}))
 
@@ -61,7 +60,7 @@ func main() {
 			fmt.Println(token)
 			if token == "" {
 				w.WriteHeader(400)
-				w.Write([]byte("Invalid token"))
+				w.Write([]byte("Empty token"))
 				return
 			}
 			t := strings.Split(token, " ")
